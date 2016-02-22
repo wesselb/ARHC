@@ -1,1 +1,2 @@
-# ARHC
+## Adaptive Run-length Huffman Compressor
+
