@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import math
 
 
 class Word:
@@ -76,25 +77,42 @@ class AdaptiveProbability:
     def getPredictive1(self):
         return (self.count1 + self.alpha1) / (self.count0 + self.alpha0 + self.count1 + self.alpha1)
 
+    def getRunLength(self):
+        return int(round(math.log(0.5) / math.log(1 - self.getPredictive1())))
+
+
+class ConstantProbability:
+    def __init__(self, prob1, runLength):
+        self.prob1 = prob1
+        self.runLength = runLength
+
+    def getPredictive1(self):
+        return self.prob1
+
+    def getRunLength(self):
+        return self.runLength
+
+    def observe(self, string):
+        pass
 
 
 class ARHC:
     N = 10000
-    n = 69
-    p = AdaptiveProbability(0.1, 0.1)
+    # p = AdaptiveProbability(0.1, 0.1)
+    p = ConstantProbability(0.01, 69)
 
     def __init__(self, inStream, outStream):
         self.inStream = Stream(inStream, self.N)
         self.outStream = Stream(outStream, self.N)
         self.buildHuffman()
 
-
     def buildHuffman(self):
-        p = self.p.getPredictive1()
-        self.words = [Word('0' * self.n, pow(1 - p, self.n))]
-        for i in range(self.n + 1):
-            self.words.append(Word('0' * i + '1', pow(1 - p, i) * p))
-        self.words.append(Word('EOT', 1.0 / (p * self.N)))
+        prob1 = self.p.getPredictive1()
+        runLength = self.p.getRunLength()
+        self.words = [Word('0' * runLength, pow(1 - prob1, runLength))]
+        for i in range(runLength + 1):
+            self.words.append(Word('0' * i + '1', pow(1 - prob1, i) * prob1))
+        self.words.append(Word('EOT', 1.0 / (prob1 * self.N + 1)))
         self.huff = Huffman(self.words)
 
     def compress(self):
