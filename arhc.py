@@ -60,10 +60,28 @@ class Huffman:
         return self.words[0].decode(stream)
 
 
+class AdaptiveProbability:
+    count0 = 0
+    count1 = 0
+
+    def __init__(self, alpha0, alpha1):
+        self.alpha0 = alpha0
+        self.alpha1 = alpha1
+
+    def observe(self, string):
+        observed1 = sum(map(int, string))
+        self.count0 += len(string) - observed1
+        self.count1 += observed1
+
+    def getPredictive1(self):
+        return (self.count1 + self.alpha1) / (self.count0 + self.alpha0 + self.count1 + self.alpha1)
+
+
+
 class ARHC:
     N = 10000
     n = 69
-    p = 0.01
+    p = AdaptiveProbability(0.1, 0.1)
 
     def __init__(self, inStream, outStream):
         self.inStream = Stream(inStream, self.N)
@@ -72,20 +90,25 @@ class ARHC:
 
 
     def buildHuffman(self):
-        self.words = [Word('0' * self.n, pow(1 - self.p, self.n))]
+        p = self.p.getPredictive1()
+        self.words = [Word('0' * self.n, pow(1 - p, self.n))]
         for i in range(self.n + 1):
-            self.words.append(Word('0' * i + '1', pow(1 - self.p, i) * self.p))
-        self.words.append(Word('EOT', 1.0/(self.p*self.N)))
+            self.words.append(Word('0' * i + '1', pow(1 - p, i) * p))
+        self.words.append(Word('EOT', 1.0 / (p * self.N)))
         self.huff = Huffman(self.words)
 
     def compress(self):
+        self.inStream.attachRead(self.p.observe)
         while self.inStream.areBitsLeftToRead():
             self.outStream.write(self.huff.encode(self.inStream))
+            self.buildHuffman()
 
     def decompress(self):
+        self.outStream.attachWrite(self.p.observe)
         word = self.huff.decode(self.inStream)
         while word != 'EOT':
             self.outStream.write(word)
+            self.buildHuffman()
             word = self.huff.decode(self.inStream)
         while self.outStream.areBitsLeftToWrite():
             self.outStream.write('0')
@@ -94,6 +117,8 @@ class ARHC:
 class Stream:
     bitsRead = 0
     bitsWritten = 0
+    observerRead = lambda self, x: None
+    observerWrite = lambda self, x: None
 
     def __init__(self, stream, N):
         self.stream = stream
@@ -101,10 +126,13 @@ class Stream:
 
     def read(self, num=1):
         self.bitsRead += num
-        return self.stream.read(num)
+        contents = self.stream.read(num)
+        self.observerRead(contents)
+        return contents
 
     def write(self, string):
         self.bitsWritten += len(string)
+        self.observerWrite(string)
         self.stream.write(string)
 
     def areBitsLeftToRead(self):
@@ -112,6 +140,12 @@ class Stream:
 
     def areBitsLeftToWrite(self):
         return self.bitsWritten < self.N
+
+    def attachRead(self, observer):
+        self.observerRead = observer
+
+    def attachWrite(self, observer):
+        self.observerWrite = observer
 
     
 
