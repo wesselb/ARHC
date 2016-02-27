@@ -30,8 +30,7 @@ class MergedWord:
         return self.left.getEncoding(prefix + '0') + self.right.getEncoding(prefix + '1')
 
     def decode(self, stream):
-        nextBit = stream.read(1)
-        if nextBit == '0':
+        if stream.read() == '0':
             return self.left.decode(stream)
         else:
             return self.right.decode(stream)
@@ -49,76 +48,69 @@ class Huffman:
             self.words.insert(0, MergedWord(self.words.pop(0), self.words.pop(0)))
         self.encoding = dict(self.words[0].getEncoding())
 
-    def encode(self, string):
-        return self.encoding[string]
+    def encode(self, stream):
+        word = ''
+        while stream.areBitsLeftToRead() and not (word in self.encoding):
+            word += stream.read()
+        return self.encoding[word] if word in self.encoding else self.encoding['EOT']
 
     def decode(self, stream):
         return self.words[0].decode(stream)
 
 
 class ARHC:
-    N = 500#10000
+    N = 10000
     n = 69
     p = 0.01
     
     def __init__(self, inStream, outStream):
-        self.inStream = inStream
-        self.outStream = outStream
-        self.buildWords()
+        self.inStream = Stream(inStream, self.N)
+        self.outStream = Stream(outStream, self.N)
+        self.buildHuffman()
+
+
+    def buildHuffman(self):
+        self.words = [Word('0' * self.n, pow(1 - self.p, self.n))]
+        for i in range(self.n + 1):
+            self.words.append(Word('0' * i + '1', pow(1 - self.p, i) * self.p))
+        self.words.append(Word('EOT', 1.0/(self.p*self.N)))
         self.huff = Huffman(self.words)
 
-    def buildWords(self):
-        self.words = [Word('0' * self.n, pow(1 - self.p, self.n))]
-        for i in range(self.n):
-            self.words.append(Word('0' * i + '1', pow(1 - self.p, i) * self.p))
-        self.words.append(Word('EOT', 1.0/self.N))
-        self.buildTree()
-
-    def buildTree(self):
-        self.root = MergedWord(self.words[0], self.words[self.n - 1])
-        for i in range(2, self.n):
-            self.root = MergedWord(self.root, self.words[self.n - i])
-
     def compress(self):
-        inBits = self.inStream.read(self.N)
-        if inBits[-1] == '0':
-            self.outStream.write('1')
-            inBits = inBits[:-1] + '1'
-        else:
-            self.outStream.write('0')
-        stream = Stream(inBits) 
-        while stream.bitsRead < self.N:
-            self.outStream.write(self.huff.encode(self.root.decode(stream)))
-        self.outStream.write(self.huff.encode('EOT'))
+        while self.inStream.areBitsLeftToRead():
+            self.outStream.write(self.huff.encode(self.inStream))
 
     def decompress(self):
-        fb = self.inStream.read(1)
-        prev = ''
-        while True:
-            cur = self.huff.decode(self.inStream)
-            if cur == 'EOT':
-                if fb == '1':
-                    self.outStream.write(prev[:-1] + '0')
-                else:
-                    self.outStream.write(prev)
-                break
-            self.outStream.write(prev)
-            prev = cur
+        word = self.huff.decode(self.inStream)
+        while word != 'EOT':
+            self.outStream.write(word)
+            word = self.huff.decode(self.inStream)
+        while self.outStream.areBitsLeftToWrite():
+            self.outStream.write('0')
 
 
 class Stream:
     bitsRead = 0
-    def __init__(self, string):
-        self.string = string
+    bitsWritten = 0
+
+    def __init__(self, stream, N):
+        self.stream = stream
+        self.N = N
 
     def read(self, num=1):
         self.bitsRead += num
-        ret = self.string[0:num]
-        self.string = self.string[num:]
-        return ret
+        return self.stream.read(num)
 
-    def getBitsRead(self):
-        return self.bitsRead
+    def write(self, string):
+        self.bitsWritten += len(string)
+        self.stream.write(string)
+
+    def areBitsLeftToRead(self):
+        return self.bitsRead < self.N
+
+    def areBitsLeftToWrite(self):
+        return self.bitsWritten < self.N
+
     
 
 if __name__ == '__main__':
