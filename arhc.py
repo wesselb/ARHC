@@ -25,7 +25,7 @@ class MergedWord:
 
     def getProb(self):
         return self.left.getProb() + self.right.getProb()
-    
+
     def getEncoding(self, prefix=''):
         return self.left.getEncoding(prefix + '0') + self.right.getEncoding(prefix + '1')
 
@@ -43,10 +43,12 @@ class Huffman:
 
     def build(self):
         while len(self.words) > 1:
-            # Merge two lowest probability words
-            self.words.sort(key=lambda word: word.getProb())
-            self.words.insert(0, MergedWord(self.words.pop(0), self.words.pop(0)))
+            self.mergeTwoLowestProbWords()
         self.encoding = dict(self.words[0].getEncoding())
+
+    def mergeTwoLowestProbWords(self):
+        self.words.sort(key=lambda word: word.getProb())
+        self.words.insert(0, MergedWord(self.words.pop(0), self.words.pop(0)))
 
     def encode(self, stream):
         word = ''
@@ -62,7 +64,7 @@ class ARHC:
     N = 10000
     n = 69
     p = 0.01
-    
+
     def __init__(self, inStream, outStream):
         self.inStream = Stream(inStream, self.N)
         self.outStream = Stream(outStream, self.N)
