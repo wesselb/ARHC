@@ -107,28 +107,20 @@ class ARHC:
         self.N = N
         self.inStream = Stream(inStream, N)
         self.outStream = Stream(outStream, N)
-        self.setProbEOT(N)
-        self.buildHuffman()
+        self.buildHuffman(N)
 
-    def setProbEOT(self, bitsLeft):
-        if bitsLeft < self.prob1.getRunLength():
-            self.probEOT = pow(1 - self.prob1.getPredictive1(), bitsLeft)
-        else:
-            self.probEOT = 0
-
-    def buildHuffman(self):
+    def buildHuffman(self, bitsLeft):
         prob1 = self.prob1.getPredictive1()
-        runLength = self.prob1.getRunLength()
+        runLength = min(bitsLeft, self.prob1.getRunLength())
         self.words = [Word(
             '0' * runLength,
-            pow(1 - prob1, runLength) * (1 - self.probEOT)
+            pow(1 - prob1, runLength)
             )]
         for i in range(runLength + 1):
             self.words.append(Word(
                 '0' * i + '1',
-                pow(1 - prob1, i) * prob1 * (1 - self.probEOT)
+                pow(1 - prob1, i) * prob1
                 ))
-        self.words.append(Word('EOT', self.probEOT))
         self.huff = Huffman(self.words)
 
     def compress(self):
@@ -136,19 +128,20 @@ class ARHC:
         while True:
             self.outStream.write(self.huff.encode(self.inStream))
             if self.inStream.areBitsLeftToRead():
-                self.setProbEOT(self.inStream.bitsLeftToRead())
-                self.buildHuffman()
+                self.buildHuffman(self.inStream.bitsLeftToRead())
             else:
                 break
 
     def decompress(self):
         self.outStream.attachWrite(self.prob1.observe)
         word = self.huff.decode(self.inStream)
-        while word != 'EOT' and self.outStream.areBitsLeftToWrite():
+        while True:
             self.outStream.write(word)
-            self.setProbEOT(self.outStream.bitsLeftToWrite())
-            self.buildHuffman()
-            word = self.huff.decode(self.inStream)
+            if self.outStream.areBitsLeftToWrite():
+                self.buildHuffman(self.outStream.bitsLeftToWrite())
+                word = self.huff.decode(self.inStream)
+            else:
+                break
         self.outStream.write('0' * self.outStream.bitsLeftToWrite())
 
 
@@ -208,7 +201,7 @@ class Main:
 
         Static compression
         --prob1 value        Probability of one, default 0.01
-        --runLength value    Run-length, default 69
+        --runLength value    Run-length, default 69*2
 
         Adaptive compression
         --adaptive           Use adaptive compression scheme
@@ -226,12 +219,12 @@ class Main:
         'alpha0': 1.0,
         'alpha1': 0.1,
         'prob1': 0.01,
-        'runLength': 69,
+        'runLength': 69*2,
         'help': False
     }
 
     def error(self, message):
-        sys.stderr.write(message[0].capitalise() + '\n')
+        sys.stderr.write(message[0].capitalize() + message[1:] + '\n')
         sys.stderr.write('Use "arhc.py --help" to view more information.\n')
         exit()
 

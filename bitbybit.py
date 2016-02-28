@@ -11,11 +11,7 @@ from os import O_NONBLOCK
 from random import random
 
 class Main:
-    # IMPORTANT!!!
     writeTimeMs = 10
-
-    H = -(0.99 * math.log(0.99) + 0.01 * math.log(0.01)) / math.log(2)
-    lenOpt = math.ceil(H * 10000)
 
     def nonBlock(self, stream):
         flags = fcntl(stream, F_GETFL)
