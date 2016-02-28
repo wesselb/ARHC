@@ -2,6 +2,8 @@
 
 import sys
 import math
+import textwrap
+import time
 
 
 class Word:
@@ -37,9 +39,12 @@ class MergedWord:
             return self.right.decode(stream)
 
 
+def pd(object):
+    sys.stderr.write('DEBUG: ' + str(object) + '\n')
+
 class Huffman:
     def __init__(self, words):
-        self.words = words
+        self.words = filter(lambda word: word.getProb() > 0, words)
         self.build()
 
     def build(self):
@@ -86,50 +91,65 @@ class ConstantProbability:
         self.prob1 = prob1
         self.runLength = runLength
 
+    def observe(self, string):
+        pass
+
     def getPredictive1(self):
         return self.prob1
 
     def getRunLength(self):
         return self.runLength
 
-    def observe(self, string):
-        pass
-
 
 class ARHC:
-    N = 10000
-    # p = AdaptiveProbability(0.1, 0.1)
-    p = ConstantProbability(0.01, 69)
-
-    def __init__(self, inStream, outStream):
-        self.inStream = Stream(inStream, self.N)
-        self.outStream = Stream(outStream, self.N)
+    def __init__(self, inStream, outStream, N, prob1):
+        self.prob1 = prob1
+        self.N = N
+        self.inStream = Stream(inStream, N)
+        self.outStream = Stream(outStream, N)
+        self.setProbEOT(N)
         self.buildHuffman()
 
+    def setProbEOT(self, bitsLeft):
+        if bitsLeft < self.prob1.getRunLength():
+            self.probEOT = pow(1 - self.prob1.getPredictive1(), bitsLeft)
+        else:
+            self.probEOT = 0
+
     def buildHuffman(self):
-        prob1 = self.p.getPredictive1()
-        runLength = self.p.getRunLength()
-        self.words = [Word('0' * runLength, pow(1 - prob1, runLength))]
+        prob1 = self.prob1.getPredictive1()
+        runLength = self.prob1.getRunLength()
+        self.words = [Word(
+            '0' * runLength,
+            pow(1 - prob1, runLength) * (1 - self.probEOT)
+            )]
         for i in range(runLength + 1):
-            self.words.append(Word('0' * i + '1', pow(1 - prob1, i) * prob1))
-        self.words.append(Word('EOT', 1.0 / (prob1 * self.N + 1)))
+            self.words.append(Word(
+                '0' * i + '1',
+                pow(1 - prob1, i) * prob1 * (1 - self.probEOT)
+                ))
+        self.words.append(Word('EOT', self.probEOT))
         self.huff = Huffman(self.words)
 
     def compress(self):
-        self.inStream.attachRead(self.p.observe)
-        while self.inStream.areBitsLeftToRead():
+        self.inStream.attachRead(self.prob1.observe)
+        while True:
             self.outStream.write(self.huff.encode(self.inStream))
-            self.buildHuffman()
+            if self.inStream.areBitsLeftToRead():
+                self.setProbEOT(self.inStream.bitsLeftToRead())
+                self.buildHuffman()
+            else:
+                break
 
     def decompress(self):
-        self.outStream.attachWrite(self.p.observe)
+        self.outStream.attachWrite(self.prob1.observe)
         word = self.huff.decode(self.inStream)
-        while word != 'EOT':
+        while word != 'EOT' and self.outStream.areBitsLeftToWrite():
             self.outStream.write(word)
+            self.setProbEOT(self.outStream.bitsLeftToWrite())
             self.buildHuffman()
             word = self.huff.decode(self.inStream)
-        while self.outStream.areBitsLeftToWrite():
-            self.outStream.write('0')
+        self.outStream.write('0' * self.outStream.bitsLeftToWrite())
 
 
 class Stream:
@@ -152,12 +172,19 @@ class Stream:
         self.bitsWritten += len(string)
         self.observerWrite(string)
         self.stream.write(string)
+        self.stream.flush()
+
+    def bitsLeftToRead(self):
+        return self.N - self.bitsRead
+
+    def bitsLeftToWrite(self):
+        return self.N - self.bitsWritten
 
     def areBitsLeftToRead(self):
-        return self.bitsRead < self.N
+        return self.bitsLeftToRead() > 0
 
     def areBitsLeftToWrite(self):
-        return self.bitsWritten < self.N
+        return self.bitsLeftToWrite() > 0
 
     def attachRead(self, observer):
         self.observerRead = observer
@@ -166,14 +193,83 @@ class Stream:
         self.observerWrite = observer
 
     
+class Main:
+    usage = textwrap.dedent('''
+    Adaptive Run-length Huffman Compressor (ARHC)
+    James Requeima and Wessel Bruinsma
+
+    Usage:
+        arhc.py < inputFile > outputFile
+
+    Flags:
+        --decompress         Decompress inputFile
+        --N length           Length of inputFile, default 10000
+        --help               Show this information
+
+        Static compression
+        --prob1 value        Probability of one, default 0.01
+        --runLength value    Run-length, default 69
+
+        Adaptive compression
+        --adaptive           Use adaptive compression scheme
+        --alpha0 value       Concentration parameter associated with probability of zero, default 1.0
+        --alpha1 value       Concentration parameter associated with probability of one, default 0.1
+
+    Details:
+        Compresses by default. Uses static compression scheme by default.
+    ''')
+
+    args = {
+        'decompress': False,
+        'N': 10000,
+        'adaptive': False,
+        'alpha0': 1.0,
+        'alpha1': 0.1,
+        'prob1': 0.01,
+        'runLength': 69,
+        'help': False
+    }
+
+    def error(self, message):
+        sys.stderr.write(message[0].capitalise() + '\n')
+        sys.stderr.write('Use "arhc.py --help" to view more information.\n')
+        exit()
+
+    def parseArguments(self):
+        iterator = iter(sys.argv)
+        next(iterator) # Skip file name
+        for arg in iterator:
+            if len(arg) < 2 or arg[:2] != '--':
+                self.error('syntax error "{}"'.format(arg))
+            else:
+                self.parseArgument(arg[2:], lambda: next(iterator))
+
+    def parseArgument(self, arg, getValue):
+        if arg in self.args:
+            if type(self.args[arg]) == bool:
+                self.args[arg] = True
+            else:
+                self.args[arg] = type(self.args[arg])(getValue())
+        else:
+            self.error('unknown argument "--{}"'. format(arg))
+
+    def run(self):
+        if self.args['help']:
+            sys.stdout.write(self.usage)
+        else:
+            if self.args['adaptive']:
+                prob1 = AdaptiveProbability(self.args['alpha0'], self.args['alpha1'])
+            else:
+                prob1 = ConstantProbability(self.args['prob1'], self.args['runLength'])
+            arhc = ARHC(sys.stdin, sys.stdout, self.args['N'], prob1)
+            if not self.args['decompress']:
+                arhc.compress()
+            else:
+                arhc.decompress()
+
 
 if __name__ == '__main__':
-    if len(sys.argv) == 1 or sys.argv[1] == '--compress':
-        arhc = ARHC(sys.stdin, sys.stdout)
-        arhc.compress()
-    elif sys.argv[1] == '--decompress':
-        arhc = ARHC(sys.stdin, sys.stdout)
-        arhc.decompress()
-    else:
-        sys.stderr.write('Undefined behaviour\n')
-
+    main = Main()
+    main.parseArguments()
+    main.run()
+    time.sleep(0.01) # Keep process alive for just another bit
