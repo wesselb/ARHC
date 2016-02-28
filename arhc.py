@@ -6,22 +6,30 @@ import textwrap
 import time
 
 
-class Word:
-    def __init__(self, string, prob):
+class Leaf:
+    """
+    Encapsulation of a symbol in a symbol code. When used in conjunction with Node it acts as the leaf of a
+    binary tree.
+
+    Args:
+        symbol (string): Representation of the symbol as a string.
+        prob (float): Probability of the symbol.
+    """
+    def __init__(self, symbol, prob):
         self.prob = prob
-        self.string = string
+        self.symbol = symbol
 
     def getProb(self):
         return self.prob
 
     def getEncoding(self, encoding):
-        return [(self.string, encoding)]
+        return [(self.symbol, encoding)]
 
     def decode(self, stream):
-        return self.string
+        return self.symbol
 
 
-class MergedWord:
+class Node:
     def __init__(self, left, right):
         self.left = left
         self.right = right
@@ -39,31 +47,28 @@ class MergedWord:
             return self.right.decode(stream)
 
 
-def pd(object):
-    sys.stderr.write('DEBUG: ' + str(object) + '\n')
-
 class Huffman:
     def __init__(self, words):
-        self.words = filter(lambda word: word.getProb() > 0, words)
-        self.build()
+        self.build(words)
 
-    def build(self):
-        while len(self.words) > 1:
-            self.mergeTwoLowestProbWords()
-        self.encoding = dict(self.words[0].getEncoding())
+    def build(self, words):
+        while len(words) > 1:
+            self.mergeTwoLowestProbWords(words)
+        self.root = words[0]
+        self.encoding = dict(self.root.getEncoding())
 
-    def mergeTwoLowestProbWords(self):
-        self.words.sort(key=lambda word: word.getProb())
-        self.words.insert(0, MergedWord(self.words.pop(0), self.words.pop(0)))
+    def mergeTwoLowestProbWords(self, words):
+        words.sort(key=lambda word: word.getProb())
+        words.insert(0, Node(words.pop(0), words.pop(0)))
 
     def encode(self, stream):
-        word = ''
-        while stream.areBitsLeftToRead() and not (word in self.encoding):
-            word += stream.read()
-        return self.encoding[word] if word in self.encoding else self.encoding['EOT']
+        symbol = ''
+        while not (symbol in self.encoding):
+            symbol += stream.read()
+        return self.encoding[symbol]
 
     def decode(self, stream):
-        return self.words[0].decode(stream)
+        return self.root.decode(stream)
 
 
 class AdaptiveProbability:
@@ -82,14 +87,10 @@ class AdaptiveProbability:
     def getPredictive1(self):
         return (self.count1 + self.alpha1) / (self.count0 + self.alpha0 + self.count1 + self.alpha1)
 
-    def getRunLength(self):
-        return int(round(math.log(0.5) / math.log(1 - self.getPredictive1())))
-
 
 class ConstantProbability:
-    def __init__(self, prob1, runLength):
+    def __init__(self, prob1):
         self.prob1 = prob1
-        self.runLength = runLength
 
     def observe(self, string):
         pass
@@ -97,52 +98,36 @@ class ConstantProbability:
     def getPredictive1(self):
         return self.prob1
 
-    def getRunLength(self):
-        return self.runLength
-
 
 class ARHC:
-    def __init__(self, inStream, outStream, N, prob1):
+    def __init__(self, prob1):
         self.prob1 = prob1
-        self.N = N
-        self.inStream = Stream(inStream, N)
-        self.outStream = Stream(outStream, N)
-        self.buildHuffman(N)
+
+    def calculateOptimalRunLength(self):
+        return int(round(math.log(0.5) / math.log(1 - self.prob1.getPredictive1())))
+
+    def buildWords(self, runLength):
+        words = [Leaf('0' * runLength, pow(1 - self.prob1.getPredictive1(), runLength))]
+        for i in range(runLength + 1):
+            words.append(Leaf('0' * i + '1', pow(1 - self.prob1.getPredictive1(), i) * self.prob1.getPredictive1()))
+        return words
 
     def buildHuffman(self, bitsLeft):
-        prob1 = self.prob1.getPredictive1()
-        runLength = min(bitsLeft, self.prob1.getRunLength())
-        self.words = [Word(
-            '0' * runLength,
-            pow(1 - prob1, runLength)
-            )]
-        for i in range(runLength + 1):
-            self.words.append(Word(
-                '0' * i + '1',
-                pow(1 - prob1, i) * prob1
-                ))
-        self.huff = Huffman(self.words)
+        runLength = min(bitsLeft, self.calculateOptimalRunLength())
+        words = self.buildWords(runLength)
+        self.huffman = Huffman(words)
 
-    def compress(self):
-        self.inStream.attachRead(self.prob1.observe)
-        while True:
-            self.outStream.write(self.huff.encode(self.inStream))
-            if self.inStream.areBitsLeftToRead():
-                self.buildHuffman(self.inStream.bitsLeftToRead())
-            else:
-                break
+    def compress(self, inStream, outStream):
+        inStream.observeRead(self.prob1.observe)
+        while inStream.bitsLeftToRead() > 0:
+            self.buildHuffman(inStream.bitsLeftToRead())
+            outStream.write(self.huffman.encode(inStream))
 
-    def decompress(self):
-        self.outStream.attachWrite(self.prob1.observe)
-        word = self.huff.decode(self.inStream)
-        while True:
-            self.outStream.write(word)
-            if self.outStream.areBitsLeftToWrite():
-                self.buildHuffman(self.outStream.bitsLeftToWrite())
-                word = self.huff.decode(self.inStream)
-            else:
-                break
-        self.outStream.write('0' * self.outStream.bitsLeftToWrite())
+    def decompress(self, inStream, outStream):
+        outStream.observeWrite(self.prob1.observe)
+        while outStream.bitsLeftToWrite() > 0:
+            self.buildHuffman(outStream.bitsLeftToWrite())
+            outStream.write(self.huffman.decode(inStream))
 
 
 class Stream:
@@ -156,8 +141,8 @@ class Stream:
         self.N = N
 
     def read(self, num=1):
-        self.bitsRead += num
         contents = self.stream.read(num)
+        self.bitsRead += len(contents)
         self.observerRead(contents)
         return contents
 
@@ -173,16 +158,10 @@ class Stream:
     def bitsLeftToWrite(self):
         return self.N - self.bitsWritten
 
-    def areBitsLeftToRead(self):
-        return self.bitsLeftToRead() > 0
-
-    def areBitsLeftToWrite(self):
-        return self.bitsLeftToWrite() > 0
-
-    def attachRead(self, observer):
+    def observeRead(self, observer):
         self.observerRead = observer
 
-    def attachWrite(self, observer):
+    def observeWrite(self, observer):
         self.observerWrite = observer
 
     
@@ -201,7 +180,6 @@ class Main:
 
         Static compression
         --prob1 value        Probability of one, default 0.01
-        --runLength value    Run-length, default 69*2
 
         Adaptive compression
         --adaptive           Use adaptive compression scheme
@@ -212,14 +190,13 @@ class Main:
         Compresses by default. Uses static compression scheme by default.
     ''')
 
-    args = {
+    arguments = {
         'decompress': False,
         'N': 10000,
         'adaptive': False,
         'alpha0': 1.0,
         'alpha1': 0.1,
         'prob1': 0.01,
-        'runLength': 69*2,
         'help': False
     }
 
@@ -229,36 +206,42 @@ class Main:
         exit()
 
     def parseArguments(self):
-        iterator = iter(sys.argv)
-        next(iterator) # Skip file name
-        for arg in iterator:
-            if len(arg) < 2 or arg[:2] != '--':
-                self.error('syntax error "{}"'.format(arg))
+        iterator = iter(sys.argv[1:]) # Skip file name
+        for argument in iterator:
+            if len(argument) < 2 or argument[:2] != '--':
+                self.error('syntax error "{}"'.format(argument))
             else:
-                self.parseArgument(arg[2:], lambda: next(iterator))
+                getValueOfArgument = lambda: next(iterator)
+                self.parseArgument(argument[2:], getValueOfArgument)
 
-    def parseArgument(self, arg, getValue):
-        if arg in self.args:
-            if type(self.args[arg]) == bool:
-                self.args[arg] = True
+    def parseArgument(self, argument, getValueOfArgument):
+        if argument in self.arguments:
+            if type(self.arguments[argument]) == bool:
+                self.arguments[argument] = True
             else:
-                self.args[arg] = type(self.args[arg])(getValue())
+                self.arguments[argument] = self.castType(type(self.arguments[argument]), getValueOfArgument())
         else:
-            self.error('unknown argument "--{}"'. format(arg))
+            self.error('unknown argument "--{}"'. format(argument))
+
+    def castType(self, valueType, value):
+        try:
+            return valueType(value)
+        except ValueError:
+            self.error('incorrect type "{}"'.format(value))
 
     def run(self):
-        if self.args['help']:
+        if self.arguments['help']:
             sys.stdout.write(self.usage)
         else:
-            if self.args['adaptive']:
-                prob1 = AdaptiveProbability(self.args['alpha0'], self.args['alpha1'])
+            if self.arguments['adaptive']:
+                arhc = ARHC(AdaptiveProbability(self.arguments['alpha0'], self.arguments['alpha1']))
             else:
-                prob1 = ConstantProbability(self.args['prob1'], self.args['runLength'])
-            arhc = ARHC(sys.stdin, sys.stdout, self.args['N'], prob1)
-            if not self.args['decompress']:
-                arhc.compress()
+                arhc = ARHC(ConstantProbability(self.arguments['prob1']))
+            streams = (Stream(sys.stdin, self.arguments['N']), Stream(sys.stdout, self.arguments['N']))
+            if self.arguments['decompress']:
+                arhc.decompress(*streams)
             else:
-                arhc.decompress()
+                arhc.compress(*streams)
 
 
 if __name__ == '__main__':
