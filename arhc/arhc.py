@@ -1,6 +1,5 @@
 import math
 from leaf import Leaf
-from node import Node
 from huffman import Huffman
 
 

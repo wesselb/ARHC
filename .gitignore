@@ -3,3 +3,15 @@
 data
 *.pyc
 doc
+report/_minted-main        
+*.fdb_latexmk    
+*.synctex.gz
+*.fls
+*.aux        
+*.log
+*.bbl        
+*.out
+*.bcf        
+report/*.pdf
+*.blg       
+*.run.xml

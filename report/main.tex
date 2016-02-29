@@ -1,0 +1,100 @@
+%!TEX program = xelatex
+
+\documentclass[letterpaper,11pt]{extarticle}
+\input{preamble.tex}
+\addbibresource{bibliography.bib}
+
+\renewcommand{\DocTitle}{Coursework 2}
+\renewcommand{\DocCourse}{MLSALT6}
+\renewcommand{\DocAuthor}{James Requeima (jrr41), Wessel Bruinsma (wpb23)}
+
+\usepackage{setspace}
+
+\newcommand{\outputPath}{../output/}
+
+\begin{document}
+\title
+\singlespacing
+
+\begingroup
+
+In this document we describe the design of our Adaptive Run-length Huffman Compressor (ARHC).
+
+\section{Motivation}
+
+\section{Description}
+
+\section{Analysis}
+
+\section{Conclusion}
+
+
+Code:
+\begin{enumerate}
+    \item Refactor
+    \item Nice comments/docstrings
+    \item Tests/doctests
+\end{enumerate}
+
+Graphs:
+\begin{enumerate}
+    \item Compression performance versus $N$
+    \item On-the-fly compression performance
+    \item Compression performance for incorrect $p$
+    \item Compression performance for different priors
+\end{enumerate}
+
+
+\begin{table}[ht]
+    \centering
+    \vspace{-0.55cm}
+    \setstretch{0.55}
+    \centerline{\hspace{.5cm}\begin{subfigure}{.6\linewidth}
+        \begin{tabular}{lp{3cm}p{4cm}}
+            \toprule
+            Input bit & Compressor output & Decompressor output \\ \midrule
+            \expandableInput{../repo/data/tab_static.tex}
+            \bottomrule
+        \end{tabular}
+        \hspace{1cm}\caption{Static compression scheme}
+    \end{subfigure}
+    \begin{subfigure}{.6\linewidth}
+        \begin{tabular}{lp{3cm}p{4cm}}
+            \toprule
+            Input bit & Compressor output & Decompressor output \\ \midrule
+            \expandableInput{../repo/data/tab_adaptive.tex}
+            \bottomrule
+        \end{tabular}
+        \caption{Adaptive compression scheme}
+    \end{subfigure}}
+    \caption{Output of the compressor and decompressor when the input is fed bit by bit. The input consists of the first 80 bits of the bent-coin benchmark file \code{filep.01.10000NR}. The parameters of the prior are $\alpha_0=0.5$ and $\alpha_1=0.5$. The static compression scheme compresses down to 22 bits, the adaptive compression scheme compresses down to 26 bits and the SCT tells us that we cannot compress further than $\lceil80 H_2(0.01) \rceil = 7$ bits.}
+    \label{tab:bits_highlight}
+\end{table}
+
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\linewidth]{\outputPath comparison1}
+        \caption{Compressor matches reality, the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.1$}
+    \end{subfigure}
+    \begin{subfigure}{.49\linewidth}
+        \includegraphics[width=\linewidth]{\outputPath comparison1_mismatch}
+        \caption{Compressor does not match reality, the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.01$}
+    \end{subfigure}
+    \caption{Comparison of the static compression scheme and adaptive compression scheme. The parameters of the prior are $\alpha_0=0.1$ and $\alpha_1=0.1$. The lines and associated areas show respectively the means and 95\% confidence regions determined over 200 runs.}
+    \label{fig:comparison_mismatch}
+\end{figure}
+
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=.95\linewidth]{\outputPath comparison_priors}
+    \caption{Comparison of the adaptive compression scheme for different $\alpha_0$ and $\alpha_1$. The lines and associated areas show respectively the means and 95\% confidence regions determined over 50 runs.}
+    \label{fig:comparison_priors}
+\end{figure}
+
+\endgroup
+\printbibliography
+
+\end{document}

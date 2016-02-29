@@ -7,7 +7,7 @@ from subprocess import Popen, PIPE
 from random import random
 
 def mean(x):
-    return sum(x) / len(x)
+    return sum(x) / float(len(x))
 
 def std(x):
     return math.sqrt(mean(map(lambda y: (y - mean(x)) ** 2, x)))
@@ -36,7 +36,7 @@ class Test:
     def getCompressedLength(self):
         return len(self.outComp)
 
-def runGroupTest(numRuns, N, p):
+def runGroupTest(numRuns, N, p, H):
     lensStatic = []
     lensAdapt = []
 
@@ -51,7 +51,10 @@ def runGroupTest(numRuns, N, p):
 
     print('Static average length:  {:.0f} +- {:.0f}'.format(mean(lensStatic), std(lensStatic)))
     print('Adapt average length:   {:.0f} +- {:.0f}'.format(mean(lensAdapt), std(lensAdapt)))
-    return mean(lensStatic), std(lensStatic), mean(lensAdapt), std(lensAdapt)
+
+    def toRat(ls): return [1 - float(l)/(N * H) for l in ls]
+
+    return mean(toRat(lensStatic)), std(toRat(lensStatic)), mean(toRat(lensAdapt)), std(toRat(lensAdapt))
 
 
 def writeMatlabFile(varName, List, filename):
@@ -59,8 +62,8 @@ def writeMatlabFile(varName, List, filename):
         f = open(filename, 'a')
     else:
         f = open(filename, 'w')
-    stringToWtite = varName + " = " + str(List) + ";\n"
-    f.write(stringToWtite)
+    stringToWrite = varName + " = " + str(List) + ";\n"
+    f.write(stringToWrite)
     f.close()
 
 
@@ -70,40 +73,31 @@ def bitString(N, p):
 
 def main():
     p = 0.01
-    #bitlenghts = [100, 250,  500, 1000, 2500, 5000, 7500, 10000, 20000]
-    bitlenghts = [20, 50, 100, 250]
-    numRuns = 2000
+    bitLengths = map(int, [1e3, 2e3, 3e3, 4e3, 5e3, 6e3, 7e3, 8e3, 9e3, 10e3])
+    numRuns = 50
 
     meanStaticList = []
     stdStaticList = []
     meanAdaptList = []
     stdAdaptList = []
-    entropyList  = []
-    expectedLengthList = []
 
-
-    for N in bitlenghts:
+    for i, N in enumerate(bitLengths):
+        sys.stderr.write('Experiment {}/{}\n'.format(i + 1, len(bitLengths)))
         H = -(p * math.log(p) + (1 - p) * math.log(1 - p)) / math.log(2)
-        lenOpt = H * N
-        print('Optimal expected length: {:.0f}'.format(lenOpt))
-        meanStatic, stdStatic, meanAdapt, stdAdapt = runGroupTest(numRuns, N, p)
+        meanStatic, stdStatic, meanAdapt, stdAdapt = runGroupTest(numRuns, N, p, H)
         meanStaticList.append(meanStatic)
         stdStaticList.append(stdStatic)
         meanAdaptList.append(meanAdapt)
         stdAdaptList.append(stdAdapt)
-        entropyList.append(H)
-        expectedLengthList.append(lenOpt)
 
-    filename = "results3_short_alpha0_1_alpha1_point1.m"
+    filename = "data/performance1.m"
     if os.path.isfile(filename):
         os.remove(filename)
-    writeMatlabFile("bitlenghts", bitlenghts, filename)
+    writeMatlabFile("bitLengths", bitLengths, filename)
     writeMatlabFile("meanStaticList", meanStaticList, filename)
     writeMatlabFile("stdStaticList", stdStaticList, filename)
     writeMatlabFile("meanAdaptList", meanAdaptList, filename)
     writeMatlabFile("stdAdaptList", stdAdaptList, filename)
-    writeMatlabFile("entropyList", entropyList, filename)
-    writeMatlabFile("expectedLengthList", expectedLengthList, filename)
 
 
 

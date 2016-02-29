@@ -1,0 +1,275 @@
+% Euler math font
+\usepackage{eulervm}
+\usepackage[T1]{fontenc}
+
+% General
+\usepackage[no-math]{fontspec} % Specify fonts
+\usepackage[english]{babel}    % Naming of figures and such
+\usepackage[
+    style=ieee,
+    sortlocale=en_GB,
+    backend=biber
+    ]{biblatex}                % Bibliography styling
+\usepackage{import}            % Importing subdocuments
+\usepackage{standalone}        % Compilable subdocuments
+\usepackage{hyperref}          % Clickable references
+\usepackage{csquotes}          % Required for biblatex
+
+% Page layout
+\usepackage[
+    a4paper,
+    bottom=1.2in,
+    top=1.2in,
+    left=0.8in,
+    right=0.8in,
+    headheight=14pt
+    ]{geometry}               % Margins
+\usepackage{fancyhdr}         % Header
+\usepackage{lastpage}         % Page numbers in footer
+\usepackage{setspace}         % Line spacing
+\usepackage{ragged2e}         % Better line endings
+\usepackage[parfill]{parskip} % New line instead of indentation
+\usepackage{titlesec}         % Size of sections
+
+% Utility
+\usepackage[table]{xcolor}                                       % Colors
+\usepackage[separate-uncertainty=true, per-mode=symbol]{siunitx} % Display units
+\usepackage{enumitem}                                            % Better enumeration
+\usepackage{ifthen}                                              % If-statements
+\usepackage{lipsum}                                              % Lorem ipsum
+
+% Figures
+\usepackage{pgfplots}                   % Plots
+\pgfplotsset{compat=newest}             % Pgfplots compatibility
+\usepackage{tikz}                       % Tikz figures
+\usepackage{float}                      % Floating of figures
+\usepackage{ltablex}                    % Merge of tabularx and longtable (use tabularx if stuff breaks)
+\usepackage{multirow}                   % Cells spanning multiple rows
+\usepackage{graphicx}                   % Graphics
+\usepackage{caption}                    % Subfigures and captions
+\captionsetup{justification=centering}
+\usepackage{subcaption}                 % Subfigures and captions
+\usepackage{booktabs}                   % Toprule etc
+\usepackage{wrapfig}                    % Wrapping around figures if necessary
+
+% Math
+\usepackage{amsmath} % Math commands
+\usepackage{amsthm}         % Math environments
+\usepackage{amssymb}        % Math symbols
+
+% Cleveref
+\usepackage[noabbrev, capitalize]{cleveref} % Automatic referencing
+
+% Custom math
+% Vectors
+\renewcommand{\vec}[1]{\boldsymbol{#1}} % Vector
+\newcommand{\vecu}[1]{\hat{\vec{#1}}}   % Unit vector
+\newcommand{\mat}[1]{\vec{#1}}          % Matrix
+
+% Set notations
+\newcommand{\Z}{\mathbb{Z}}   % Integers
+\newcommand{\R}{\mathbb{R}}   % Real numbers
+\renewcommand{\C}{\mathbb{C}} % Complex numbers
+\newcommand{\N}{\mathbb{N}}   % Natural numbers
+
+% Symbols
+\newcommand{\es}{\varnothing}   % Empty set
+\newcommand{\e}{\varepsilon}    % Epsilon
+\newcommand{\sub}{\subseteq}    % Subset
+\newcommand{\imp}{\Rightarrow}  % Implication
+\renewcommand{\d}{\partial}     % Partial
+\renewcommand{\th}{\theta}      % Theta
+
+% Operators
+\renewcommand{\Re}{\operatorname{Re}}
+\renewcommand{\Im}{\operatorname{Im}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\argmax}[1]{\underset{#1}{\operatorname{argmax}}~}
+\newcommand{\argmin}[1]{\underset{#1}{\operatorname{argmin}}~}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\col}{\operatorname{col}}
+\newcommand{\proj}{\operatorname{proj}}
+\renewcommand{\perp}{\operatorname{perp}} % \bot for perp symbol
+\newcommand{\sign}{\operatorname{sign}}
+\newcommand{\rank}{\operatorname{rank}}
+
+% Small superscript in math
+\newcommand{\sus}[1]{^{\text{\tiny $#1$}}}
+\newcommand{\supsmall}[1]{\sus{#1}}        % Explicit command
+
+% Subscripts without spacing
+\renewcommand{\ss}[1]{_\mathit{#1}}
+
+% Straight 'd' in integral
+\newcommand{\id}[1]{\, \mathrm{d} #1}
+
+% Amsmath environements
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+
+% Fix interference of parfill option of parskip package with amsmath environments
+\begingroup
+    \makeatletter
+    \@for\theoremstyle:=definition,remark,plain\do{%
+        \expandafter\g@addto@macro\csname th@\theoremstyle\endcsname{%
+            \setlength\thm@preskip\parskip
+            \setlength\thm@postskip{0pt}
+            \addtolength\thm@preskip\parskip
+            }%
+        }
+\endgroup
+
+
+% Hyperlink
+\hypersetup{
+    colorlinks,
+    citecolor = black,
+    filecolor = black,
+    linkcolor = black,
+    urlcolor  = black
+}
+
+% Left-justified text in tabularx environment
+\newcolumntype{L}{>{\RaggedRight\arraybackslash}X}
+
+% Fonts
+\setsansfont{Avenir Next LT Pro}
+\setromanfont{Adobe Caslon Pro}
+\setmonofont[Scale=0.85]{Source Code Pro}
+\newcommand{\code}[1]{\texttt{#1}} % Code
+
+% Style enumerate
+\setlist[enumerate]{label=(\arabic*)}
+\setlist[itemize]{label=\textbullet}
+
+% Shortcuts to colors
+\newcommand{\red}[1]{{\color{red} #1}}
+\newcommand{\blue}[1]{{\color{blue} #1}}
+\newcommand{\green}[1]{{\color{green} #1}}
+
+% Line spacing
+\onehalfspacing
+
+% Page layout
+\pagestyle{fancy}
+\lhead{\DocTitle\ifthenelse{\equal{\DocCourse}{}}{}{, \DocCourse}}
+\chead{}
+\rhead{\DocAuthor}
+\lfoot{}
+\cfoot{}
+\rfoot{Page~\thepage~of~\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\newcommand{\DocCourse}{}
+\newcommand{\DocTitle}{}
+\newcommand{\DocAuthor}{}
+
+% Title and sections
+\titleformat*{\section}{\Large\bfseries}
+\titlespacing*{\section}{0pt}{\baselineskip}{0.5\baselineskip}
+\titleformat*{\subsection}{\large\bfseries}
+\titlespacing*{\subsection}{0pt}{\baselineskip}{0.5\baselineskip}
+\renewcommand{\title}{\vspace*{-1.4em}{\LARGE\bfseries\DocTitle}\vspace*{0.5\baselineskip}}
+
+% Sections in margins
+\newcommand{\sectionsInMargins}{
+    \titleformat{\section}[leftmargin]
+        {\Large\bfseries\filleft}
+        {\thesection) }{0pt}{}
+        \titlespacing{\section}
+        {4pc}{1.5ex plus .1ex minus .2ex}{1pc}
+}
+\newcommand{\subsectionsInMargins}{
+    \titleformat{\subsection}[leftmargin]
+        {\large\bfseries\filleft}
+        {\thesubsection) }{0pt}{}
+        \titlespacing{\subsection}
+        {4pc}{1.5ex plus .1ex minus .2ex}{1pc}
+}
+
+% Run in on sections
+\newcommand{\runInSection}{
+    \titleformat{\section}[runin]
+        {\normalfont\Large\bfseries}{\thesection}{1em}{}
+}
+
+\newcommand{\runInSubsection}{
+    \titleformat{\subsection}[runin]
+        {\normalfont\Large\bfseries}{\thesubsection}{1em}{}
+}
+
+% Reduced space below figures
+% \setlength{\belowcaptionskip}{-1em}
+
+% Easy section creation
+\newcommand{\newSection}[1]{\section{} \label{sec:#1}}
+
+% Listings
+\usepackage{listings}
+\newcommand\listingStyle{\lstset{
+    otherkeywords    = {self},
+    basicstyle       = \fontsize{9}{8}\selectfont\ttfamily,
+    showstringspaces = false,
+    breaklines       = true,
+    postbreak        = \raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
+    tabsize          = 2,
+    escapeinside     = {(*}{*)},
+    mathescape
+}}
+
+\lstnewenvironment{listing}[1][]
+  {\vspace{0.25em}\listingStyle\lstset{#1}}
+  {\vspace{-0.75em}}
+
+% Matlab listings
+\usepackage{matlab-prettifier}
+\newcommand{\lstinputMatlab}[1]{
+    \lstinputlisting[style=Matlab-editor, basicstyle=\fontsize{9}{8}\selectfont\ttfamily]{#1}
+}
+
+% Table footnote
+\newcommand{\tableFootnote}[1]{
+    \\[0.5em]
+    {\centering \footnotesize #1}
+    \vspace{-0.5em}
+}
+
+% Scientific e notation
+\newcommand{\sce}{\text{\sc{e}}}
+
+% Framed listing
+\newcommand{\framedListings}{
+    \lstset{
+         frame     = single,
+         framerule = 0.075em,
+         rulecolor = \color{black}
+    }
+}
+
+% Floating listings
+\DeclareCaptionFormat{cont}{#1~(cont.)#2#3 }
+
+\newcounter{tmp}
+
+\newcommand\savecount{\setcounter{tmp}{\value{lstlisting}}}
+\newcommand\contcap{%
+\setcounter{lstlisting}{\value{tmp}}
+\addtocounter{lstlisting}{-1}
+\captionsetup[lstlisting]{format=cont}}
+
+% Better highlighting
+\usepackage{minted}
+\newmintedfile[pythoncode]{python}{
+    fontsize        = \footnotesize,
+    baselinestretch = 0.7,
+    frame           = single,
+    breaklines      = true
+}
+
+% Expandable input
+\makeatletter
+\newcommand*\expandableInput[1]{\@@input#1 }
+\makeatother
