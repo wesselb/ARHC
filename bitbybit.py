@@ -5,13 +5,15 @@ import os
 import sys
 import time
 import fcntl
-from fcntl import fcntl , F_GETFL, F_SETFL
+import textwrap
+from fcntl import fcntl, F_GETFL, F_SETFL
 from subprocess import Popen, PIPE
 from os import O_NONBLOCK
 from random import random
 
-class Main:
-    writeTimeMs = 10
+
+class Test:
+    writeTimeMs = 40
 
     def nonBlock(self, stream):
         flags = fcntl(stream, F_GETFL)
@@ -31,9 +33,10 @@ class Main:
         stream.write(string)
         time.sleep(self.writeTimeMs / 1000.0)
 
-    def run(self, args, bits, inputFn):
-        fileIn = open(inputFn, 'r')
-        pDecomp = Popen(['./arhc.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
+    def run(self, args):
+        bitsCopy = list(self.bits)
+        pDecomp = Popen(
+            ['./arhc.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
         pComp = Popen(['./arhc.py'] + args, stdin=PIPE, stdout=PIPE)
 
         # Make pipes non-blocking
@@ -43,19 +46,24 @@ class Main:
         self.nonBlock(pDecomp.stdout)
 
         track = Track()
-        for i in range(bits):
-            sys.stderr.write('Bit {}/{}\n'.format(i + 1, bits))
-            bitIn = fileIn.read(1)
+        for i in range(len(self.bits)):
+            sys.stderr.write('{} '.format(i + 1))
+            bitIn = bitsCopy.pop(0)
             self.write(pComp.stdin, bitIn)
             compOut = self.read(pComp.stdout)
             self.write(pDecomp.stdin, compOut)
             decompOut = self.read(pDecomp.stdout)
             track.track(bitIn, compOut, decompOut)
+        sys.stderr.write('\n')
 
-        pComp.kill()
-        pDecomp.kill()
+        pComp.wait()
+        pDecomp.wait()
 
         return track
+
+    def setBits(self, bits):
+        self.bits = bits
+
 
 class Track:
     i = 0
@@ -90,9 +98,15 @@ class Track:
         self.i += 1
 
     def table(self, bitIn, compOut, decompOut):
-        if self.i < 60:
-            self.tab += '\\code{{\\scriptsize {:s}}} & \\code{{\\scriptsize {:s}}} & \\code{{\\scriptsize {:s}}} \\\\ \n'.format(
-                    bitIn, compOut, decompOut)
+        if len(decompOut) > 25:
+            decompOut = decompOut[:25]
+            dots = '$\\cdots$'
+        else:
+            dots = ''
+        self.tab += '\\code{{\\scriptsize {:s}}} &' \
+                    ' \\code{{\\scriptsize {:s}}} &' \
+                    ' \\code{{\\scriptsize {:s}{}}}' \
+                    ' \\\\ \n'.format(bitIn, compOut, decompOut, dots)
 
     def getTable(self):
         return self.tab
@@ -103,44 +117,121 @@ class Track:
 
     def ratio(self, symbol):
         if symbol:
-            self.rats += [(self.i, 1 - float(len(self.compOutAccum))/len(self.bitInAccum))]
+            self.rats += [(self.i, 1 - float(len(self.compOutAccum)) /
+                           len(self.bitInAccum))]
 
     def ratioST(self, symbol, compOut):
         if symbol:
-            self.ratsST += [(self.i, 1 - float(len(compOut))/len(self.bitInAccumST))]
+            self.ratsST += [(self.i, 1 - float(len(compOut)) /
+                             len(self.bitInAccumST))]
 
     def getRatioST(self):
-        return 'ratiosST = [\n    ' + '    '.join(map(lambda x: '{} {}\n'.format(*x), self.ratsST)) + '];\n'
+        return 'ratiosST = [\n    ' + '    '.join(
+            map(lambda x: '{} {}\n'.format(*x), self.ratsST)) + '];\n'
 
     def getRatio(self):
-        return 'ratios = [\n    ' + '    '.join(map(lambda x: '{} {}\n'.format(*x), self.rats)) + '];\n'
+        return 'ratios = [\n    ' + '    '.join(
+            map(lambda x: '{} {}\n'.format(*x), self.rats)) + '];\n'
 
+
+def bitString(N, p):
+    return ''.join(map(lambda x: '0' if x > p else '1',
+                       [random() for _ in range(N)]))
 
 
 if __name__ == '__main__':
-    main = Main()
-
-    N = 2000
     p = 0.01
+    H = -(p * math.log(p) + (1 - p) * math.log(1 - p))/math.log(2)
+    test = Test()
 
-    for i in range(100):
-        f = open('temp.txt', 'w')
-        f.write(''.join(map(lambda x: '0' if x > p else '1', [random() for _ in range(N)])))
-        f.close()
+    execTables = False
+    execComparison1 = False
+    execComparison1Mismatch = False
+    execPriors1 = True
 
-        track = main.run(['--adaptive', '--N', str(N)], N, 'temp.txt')
-        with open('data/adaptive_tab' + str(i) + '.tex', 'w') as f:
+    if execTables:
+        sys.stderr.write('Tables\n')
+        N = 80
+        test.setBits(
+            '0100000000000000000000000000000010000000000000000000000000000000000'
+            '0000000000100000000000000000000000100000000000000010000000000000000'
+            '0000000000000000000000000000000000000000000000'[:N])
+        track = test.run(['--adaptive', '--N', str(N), '--alpha0', '0.5',
+                          '--alpha1', '0.5'])
+        lenAdapt = len(track.compOutAccum)
+        with open('data/tab_adaptive.tex', 'w') as f:
             f.write(track.getTable())
-        with open('data/adaptive_ratios' + str(i) + '.m', 'w') as f:
-            f.write(track.getRatio())
-        with open('data/adaptive_ratiosST' + str(i) + '.m', 'w') as f:
-            f.write(track.getRatioST())
-
-        track = main.run(['--N', str(N)], N, 'temp.txt')
-        with open('data/static_tab' + str(i) + '.tex', 'w') as f:
+        track = test.run(['--N', str(N)])
+        lenStat = len(track.compOutAccum)
+        with open('data/tab_static.tex', 'w') as f:
             f.write(track.getTable())
-        with open('data/static_ratios' + str(i) + '.m', 'w') as f:
-            f.write(track.getRatio())
-        with open('data/static_ratiosST' + str(i) + '.m', 'w') as f:
-            f.write(track.getRatioST())
 
+        print textwrap.dedent('''
+            Input length:    {}
+            Static length:   {}
+            Adaptive length: {}
+            Optimal length:  {}
+            ''').format(N, lenStat, lenAdapt, int(math.ceil(H*N)))
+
+    if execComparison1:
+        N = 200
+        p = 0.1
+        runs = 200
+
+        for i in range(runs):
+            sys.stderr.write('Run {}/{}\n'.format(i + 1, runs))
+            test.setBits(bitString(N, p))
+
+            track = test.run(['--adaptive', '--N', str(N), '--prob1', str(p)])
+            with open('data/adaptive_ratios' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatio())
+            with open('data/adaptive_ratiosST' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatioST())
+
+            track = test.run(['--N', str(N), '--prob1', str(p)])
+            with open('data/static_ratios' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatio())
+            with open('data/static_ratiosST' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatioST())
+
+    if execComparison1Mismatch:
+        N = 200
+        p = 0.1
+        pActual = 0.01
+        runs = 200
+
+        for i in range(runs):
+            sys.stderr.write('Run {}/{}\n'.format(i + 1, runs))
+            test.setBits(bitString(N, pActual))
+
+            track = test.run(
+                ['--adaptive', '--N', str(N), '--prob1', str(p), '--alpha0', '0.1', '--alpha1', '0.1'])
+            with open('data/adaptive_ratios_mismatch' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatio())
+            with open('data/adaptive_ratiosST_mismatch' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatioST())
+
+            track = test.run(['--N', str(N), '--prob1', str(p)])
+            with open('data/static_ratios_mismatch' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatio())
+            with open('data/static_ratiosST_mismatch' + str(i) + '.m', 'w') as f:
+                f.write(track.getRatioST())
+
+    if execPriors1:
+        N = 200
+        p = 0.1
+        alphas = [(0.1, 0.1), (1.0, 1.0), (5.0, 5.0)]
+        runs = 50
+
+        for j, (alpha0, alpha1) in enumerate(alphas):
+            for i in range(runs):
+                sys.stderr.write('Prior {}/{}, run {}/{}\n'.format(
+                    j + 1, len(alphas), i + 1, runs))
+                test.setBits(bitString(N, p))
+                time.sleep(0.5)
+                track = test.run(['--adaptive', '--N', str(N), '--prob1',
+                                  str(p), '--alpha0', str(alpha0),
+                                  '--alpha1', str(alpha1)])
+
+                with open('data/prior' + str(j) + '_run' + str(i) + '.m', 'w') as f:
+                    f.write(track.getRatio())

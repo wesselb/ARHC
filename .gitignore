@@ -1,6 +1,5 @@
 *.swp
 .idea
 data
-compressed.txt
-decompressed.txt
-temp.txt
+*.pyc
+doc
