@@ -13,7 +13,7 @@ from random import random
 
 
 class Test:
-    writeTimeMs = 40
+    writeTimeMs = 60
 
     def nonBlock(self, stream):
         flags = fcntl(stream, F_GETFL)
@@ -36,8 +36,8 @@ class Test:
     def run(self, args):
         bitsCopy = list(self.bits)
         pDecomp = Popen(
-            ['./arhc.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
-        pComp = Popen(['./arhc.py'] + args, stdin=PIPE, stdout=PIPE)
+            ['./squash.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
+        pComp = Popen(['./squash.py'] + args, stdin=PIPE, stdout=PIPE)
 
         # Make pipes non-blocking
         self.nonBlock(pComp.stdin)
@@ -56,8 +56,13 @@ class Test:
             track.track(bitIn, compOut, decompOut)
         sys.stderr.write('\n')
 
-        pComp.wait()
-        pDecomp.wait()
+        pComp.stdin.close()
+        pComp.stdout.close()
+        pDecomp.stdin.close()
+        pDecomp.stdout.close()
+
+        pComp.kill()
+        pDecomp.kill()
 
         return track
 
@@ -224,11 +229,12 @@ if __name__ == '__main__':
         runs = 50
 
         for j, (alpha0, alpha1) in enumerate(alphas):
+            if j == 0:
+                continue
             for i in range(runs):
                 sys.stderr.write('Prior {}/{}, run {}/{}\n'.format(
                     j + 1, len(alphas), i + 1, runs))
                 test.setBits(bitString(N, p))
-                time.sleep(0.5)
                 track = test.run(['--adaptive', '--N', str(N), '--prob1',
                                   str(p), '--alpha0', str(alpha0),
                                   '--alpha1', str(alpha1)])
