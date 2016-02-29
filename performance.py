@@ -17,8 +17,8 @@ class Test:
         self.bits = bits
         
     def run(self, args=[]):
-        pComp = Popen(['./arhc.py'] + args, stdin=PIPE, stdout=PIPE)
-        pDecomp = Popen(['./arhc.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
+        pComp = Popen(['./squash.py'] + args, stdin=PIPE, stdout=PIPE)
+        pDecomp = Popen(['./squash.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
         pComp.stdin.write(self.bits)
         outComp = pComp.stdout.read()
         pDecomp.stdin.write(outComp)
