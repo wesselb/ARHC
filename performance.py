@@ -70,8 +70,9 @@ def bitString(N, p):
 
 def main():
     p = 0.01
-    bitlenghts = [100, 250,  500, 1000, 2500, 5000, 7500, 10000]
-    numRuns = 1000
+    #bitlenghts = [100, 250,  500, 1000, 2500, 5000, 7500, 10000, 20000]
+    bitlenghts = [20, 50, 100, 250]
+    numRuns = 2000
 
     meanStaticList = []
     stdStaticList = []
@@ -93,7 +94,7 @@ def main():
         entropyList.append(H)
         expectedLengthList.append(lenOpt)
 
-    filename = "results.m"
+    filename = "results3_short_alpha0_1_alpha1_point1.m"
     if os.path.isfile(filename):
         os.remove(filename)
     writeMatlabFile("bitlenghts", bitlenghts, filename)
