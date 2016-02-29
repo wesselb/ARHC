@@ -53,8 +53,13 @@ def runGroupTest(numRuns, N, p, H):
     print('Adapt average length:   {:.0f} +- {:.0f}'.format(mean(lensAdapt), std(lensAdapt)))
 
     def toRat(ls): return [1 - float(l)/(N * H) for l in ls]
+    meanRatStat = mean(toRat(lensStatic))
+    stdRatStat = std(toRat(lensStatic))
+    meanRatAdapt = mean(toRat(lensAdapt))
+    stdRatAdapt = std(toRat(lensAdapt))
 
     return mean(toRat(lensStatic)), std(toRat(lensStatic)), mean(toRat(lensAdapt)), std(toRat(lensAdapt))
+    return mean
 
 
 def writeMatlabFile(varName, List, filename):
