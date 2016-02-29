@@ -10,7 +10,7 @@
 
 \usepackage{setspace}
 
-\newcommand{\outputPath}{../output/}
+\newcommand{\outputPath}{output/}
 
 \begin{document}
 \title
@@ -53,7 +53,7 @@ Graphs:
         \begin{tabular}{lp{3cm}p{4cm}}
             \toprule
             Input bit & Compressor output & Decompressor output \\ \midrule
-            \expandableInput{../repo/data/tab_static.tex}
+            \expandableInput{\outputPath tab_static.tex}
             \bottomrule
         \end{tabular}
         \hspace{1cm}\caption{Static compression scheme}
@@ -62,7 +62,7 @@ Graphs:
         \begin{tabular}{lp{3cm}p{4cm}}
             \toprule
             Input bit & Compressor output & Decompressor output \\ \midrule
-            \expandableInput{../repo/data/tab_adaptive.tex}
+            \expandableInput{\outputPath tab_adaptive.tex}
             \bottomrule
         \end{tabular}
         \caption{Adaptive compression scheme}
