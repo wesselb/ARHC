@@ -22,6 +22,14 @@ In this document we describe the design of our Adaptive Run-length Huffman Compr
 
 \section{Motivation}
 
+Since the Huffman code is obliged to use one character per symbol, using it on the symbol set $\{0,1\}$ for the task of compressing $N=10,000$ bits, each having probability $f = 0.01$ of being a 1, will be extremely wasteful. Since the $0$, symbol is highly probable, we transmit an entire bit when virtually no information is conveyed. If we are observing the file bit-by-bit, the number of bits that pass before a one is observed does contain a lot of information. As an approach, we treat each of these zero-counts, or run-lengths, as a symbol for the Huffman algorithm. So that our encoding and decoding algorithm is well defined, we will pick a maximum run-length which will be the largest number of zeros to denote as a symbol.
+
+Now we need to determine the maximum run length. Let $L$ be the expected codelength and $H$ be the entropy of the distribution over the symbols in our symbol set. Then the expected number of wasted bits per symbol is  $L - H$. If we plot the ratio $L/H$ we see that this ratio is pretty close to one at (approximately) multiples of $69$.
+
+%plot
+
+The expected codeword length of the Huffman code is equal to the entropy when the distribution over the symbols in our symbol set is dyadic. Let $r$ be the maximum run length used. The all zero symbol will have probability $(0.99)^r$ and so in order to have  $L/H$ very close to one we must have that $(0.99)^r \approx 2^{-k} \implies r\approx k\times 69$.
+
 \section{Description}
 
 \section{Analysis}
