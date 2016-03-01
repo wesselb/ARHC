@@ -10,6 +10,7 @@
 
 \usepackage{setspace}
 
+
 \newcommand{\outputPath}{output/}
 
 \begin{document}
@@ -22,7 +23,7 @@ In this document we briefly describe the design of the Adaptive Run-length Huffm
 
 \section{Motivation}
 % For the task of compressing $N=10,000$ bits, each having probability $p = 0.01$ of being a 1, the extra bit overhead of the Huffman algorithm prohibits naive application of it. Since the $0$ symbol is highly probable, its observations conveys virtually no information. On If we are observing the file bit-by-bit, the number of bits that pass before a one is observed does contain a lot of information. As an approach, we treat each of these zero-counts, or run-lengths, as a symbol for the Huffman algorithm. To make sure that our encoding and decoding algorithm is well defined, we pick a maximum run-length $n$ that defines the largest number of zeros denoted as a symbol. More precisely, let
-For the task of compressing $N=10,000$ bits, each having probability $p = 0.01$ of being a 1, the extra bit overhead of the Huffman algorithm prohibits naive application of it; since the $0$ symbol is highly probable and thus its observation conveys virtually no information, encoding it by a bit is wasteful.
+For the task of compressing $N=10,000$ bits, each having probability $p = 0.01$ of being a 1, the extra bit overhead of the Huffman algorithm prohibits naive application of it; since the $0$ symbol is highly probable, its observation conveys virtually no information and so encoding it by a bit is wasteful.
 
 Imagine that we observe the input file bit by bit. Then the numbers of bits that pass before ones are observed fully describe the file, and in addition all have high information content. This motivates the approach to define each of these zero-counts, also called run-lengths, as the symbols of our alphabet. However, to make sure that our approach is well defined, we pick a maximum run-length $n$ that defines the largest number of zeros denoted as a symbol. More precisely, let
 \begin{align*}
@@ -41,7 +42,9 @@ Motivated by the fact that $1-p$ is small, we assume that the result of running 
     L \approx \sum_{i=1}^{\lfloor (n-1) f^- \rfloor} (1-p)^{i-1}p\cdot (\lfloor \log_2 (n - 1) \rfloor + 1) +
     \sum_{i=\lceil (n-1) f^- \rceil}^{n} (1-p)^{i-1}p\cdot (\lceil \log_2 (n - 1) \rceil + 1) + (1-p)^n.
 \end{align*}
-The approximation of $L/H$ using the above expression for $H$ and above approximation for $L$ is shown by the dashed green line in \cref{fig:ratio}. We see that the approximation holds perfectly for $n \le 100$ where inspection of the computed Huffman codes shows that the assumption indeed holds.} We see that this ratio attains extrema at multiples of $69$ and that $L$ closely approximates $H$ at these points. Now the expected codeword length of the Huffman code is equal to the entropy when the distribution over the symbols in our symbol set is dyadic. Therefore, since all-zero symbol has probability $0.99^n$, in order to have $L/H$ close to one, we must have that $0.99^n \approx 2^{-k}$ for any natural $k$, which implies that $n \approx k\times 69$. We choose to use $n=69$.
+The approximation of $L/H$ using the above expression for $H$ and above approximation for $L$ is shown by the dashed green line in \cref{fig:ratio}. We see that the approximation holds perfectly for $n \le 100$ where inspection of the computed Huffman codes shows that the assumption indeed holds.} We see that this ratio attains extrema at multiples of $69$ and that $L$ closely approximates $H$ at these points.
+
+The expected codeword length of the Huffman code is equal to the entropy when the distribution over the symbols in our symbol set is dyadic. Since all-zero symbol has probability $0.99^n$, in order to have $L/H$ close to one, we must have that $0.99^n \approx 2^{-k}$ for any natural $k$, which implies that $n \approx k\times 69$. We choose to use $n=69$.
 
 \begin{figure}[ht]
     \centering
@@ -61,7 +64,7 @@ If $p$ is unknown, then the user can provide parameters $\alpha_0$, $\alpha_1$ f
 The operation of line 6 of \cref{alg:pseudo} dynamically adjusts the run-length so that
 \begin{enumerate}
     \item the run-length is near optimal for the current estimate of $p$ and
-    \item the symbols in $\mathcal{A}_X$ are able to entirely encode and decode the input stream\footnote{When $n>N$, then $\mathcal{A}_X$ might not be able to encode the remaining bits in the input stream, and some symbols in $\mathcal{A}_X$ will never be used.} without the use of an end-of-transmission symbol or the length of the transmitted message.
+    \item the symbols in $\mathcal{A}_X$ are able to entirely encode and decode the input stream\footnote{When $n>N$, without adjustment $\mathcal{A}_X$ might not be able to encode the remaining bits in the input stream, and some symbols in $\mathcal{A}_X$ will never be used.} without the use of an end-of-transmission symbol or the length of the transmitted message.
 \end{enumerate}
 
 Note that ARHC is able to perform partial compression and partial decompression; the compressor writes a symbol directly after the associated input bits are read and similarly the decompressor writes the input bits directly after the associated symbol is read. We will experiment with this behaviour by feeding the input bit by bit in \cref{sec:analysis}.
@@ -100,7 +103,7 @@ Note that ARHC is able to perform partial compression and partial decompression;
 
 \section{Analysis}
 \label{sec:analysis}
-The source coding theorem tells us that we cannot compress the $N$-bits input further than $NH_2(p)\approx807.9$ bits. We can approximate the length of the compressed input by $\hat{N}=NL/L_i$ where $L_i$ represents the expected number of inputs bits a symbol in $\mathcal{A}_X$ represents. We calculate $L_i$ via
+The source coding theorem tells us that we cannot compress the $N$-bits input to fewer than $NH_2(p)\approx807.9$ bits. We can approximate the length of the compressed input by $\hat{N}=NL/L_i$ where $L_i$ represents the expected number of inputs bits a symbol in $\mathcal{A}_X$ represents. We calculate $L_i$ via
 \begin{align*}
     L_i = \sum_{i=1}^{n-1}(1-p)^{i-1}p\cdot i +(1-p)^n\cdot n
 \end{align*}
@@ -108,9 +111,9 @@ which yields for $n=69$ that $\hat{N}=810.5$ bits; by averaging over 500 runs we
 
 \begin{table}[ht]
     \centering
-    \begin{tabular}{l|ll}
+    \begin{tabular}{l|cc}
         \toprule
-        & Compressed input & Compression ratio \\ \midrule
+        & Expected length of the compressed input & Associated compression ratio \\ \midrule
         Optimal & $807.9$ bits & $0.9192$ \\
         ARHC & $810.5$ bits & $0.9190$ \\ \bottomrule
     \end{tabular}
@@ -118,18 +121,20 @@ which yields for $n=69$ that $\hat{N}=810.5$ bits; by averaging over 500 runs we
     \label{tab:compression_performance}
 \end{table}
 
-\Cref{fig:different_N} shows the compression performance of the static and adaptive compression scheme for different inputs lengths $N$. We see that the static compression scheme converges to the optimal compression rate more quickly than the adaptive compression scheme, but that the adaptive compression scheme has initially lower variance. This reflects the classical convergence speed versus variance tradeoff.
+\Cref{fig:different_N} shows the compression performance of the static and adaptive compression scheme for different inputs lengths $N$. We see that for small $N$, the static compression scheme attains better compression ratio than the adaptive compression scheme, but also has higher variance. For large $N$, the static compression scheme and the adaptive compression scheme seem to perform similarly.
 
-\Cref{tab:bits_highlight} shows the output of the compressor and decompressor when the input is fed bit by bit.\footnote{Feeding the compressor and decompressor bit by bit turned out to be quite a challenge; it required us to flag the input and output streams as non-blocking and take into account the processing time of the compressor.} It shows the case where the parameter $p$ of the static compression scheme matches the probability of the bent coint and the case where it does not. We see that in the former case the static compression scheme converges more quickly to the optimal compression ratio than the adaptive compression scheme, though with higher variance, but that in the latter case the adaptive compression scheme is able to adapt to the mismatched probability and eventually outperform the static compression scheme.
+As the input is fed bit by bit to the compressor\footnote{Feeding the input bit by bit to the compressor and decompressor turned out to be difficult; it required us to flag the input and output streams as non-blocking and take into account the processing time of the compressor and decompressor.}, \Cref{tab:bits_highlight} shows the immediate output, i.e. partial compression and decompression output, of the compressor and decompressor. This allows us to inspect the dynamics of the adaptive compression scheme. We see that as the adaptive compressor observes more bits, it learns to efficiently encode the all-zero symbol.
 
-\Cref{fig:comparison_priors} shows the effect of different settings of $\alpha_0$ and $\alpha_1$ on the performance of the adaptive compression scheme when the input is fed bit by bit. We see that for small $\alpha_0$ and $\alpha_1$ the compressor is able to adapt more quickly, but also has higher variance. This again reflects the classical convergence speed versus variance tradeoff. Furthermore, we observe that $\alpha_0=1.0$, $\alpha_1=1.0$ has initially a significant advantage. This shows that an appropriate prior can indeed help compression performance when little is known about the input.
+\Cref{fig:comparison_mismatch} shows the compression performance in the case where the parameter $p$ of the static compression scheme matches the probability of the bent coin and the case where it does not. We see that in the former case the static compression scheme converges more quickly to the optimal compression ratio than the adaptive compression scheme, though with higher variance, but that in the latter case the adaptive compression scheme is able to adapt to the mismatched probability and eventually outperform the static compression scheme.
 
-Finally, \cref{tab:bits_highlight} shows the output of the compressor and decompressor when the input is fed bit by bit. This allows us to concretely inspect the dynamics of the adaptive compression scheme. We see that as the adaptive compressor sees more bits, it learns to efficiently encode the all-zero symbol.
+Finally, \cref{fig:comparison_priors} shows the effect of different settings of $\alpha_0$ and $\alpha_1$ on the compression performance of the adaptive compression scheme. We see that for small $\alpha_0$ and $\alpha_1$ the compressor is able to adapt more quickly, but also has higher variance. Furthermore, we observe that $\alpha_0=1.0$, $\alpha_1=1.0$ initially attains a better compression ratio. This shows that an appropriate prior can indeed help compression performance when little is known about the input.
+
+
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\linewidth]{\outputPath Ns.pdf}
-    \caption{Compression performance of the static and adaptive compression scheme for different input lengths $N$}
+    \caption{Compression performance of the static compression scheme and the adaptive compression scheme for different input lengths $N$}
     \label{fig:different_N}
 \end{figure}
 
@@ -165,13 +170,13 @@ Finally, \cref{tab:bits_highlight} shows the output of the compressor and decomp
     \centering
     \begin{subfigure}{.49\linewidth}
         \includegraphics[width=\linewidth]{\outputPath comparison1}
-        \caption{Compressor matches reality, the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.1$}
+        \caption{Compressor matches reality; the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.1$}
     \end{subfigure}
     \begin{subfigure}{.49\linewidth}
         \includegraphics[width=\linewidth]{\outputPath comparison1_mismatch}
-        \caption{Compressor does not match reality, the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.01$}
+        \caption{Compressor does not match reality; the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.01$}
     \end{subfigure}
-    \caption{Comparison of the static compression scheme and adaptive compression scheme when a random 200-bit input is fed bit by bit. The parameters of the prior are $\alpha_0=0.1$ and $\alpha_1=0.1$. The lines and associated areas show respectively the means and 95\% confidence regions determined over 200 runs.}
+    \caption{Comparison of the static compression scheme and the adaptive compression scheme when a random 200-bit input is fed bit by bit. The parameters of the prior are $\alpha_0=0.1$ and $\alpha_1=0.1$. The lines and associated areas show respectively the means and 95\% confidence regions determined over 200 runs.}
     \label{fig:comparison_mismatch}
 \end{figure}
 
@@ -179,11 +184,13 @@ Finally, \cref{tab:bits_highlight} shows the output of the compressor and decomp
 \begin{figure}[ht]
     \centering
     \includegraphics[width=.95\linewidth]{\outputPath comparison_priors}
-    \caption{Comparison of the adaptive compression scheme for different $\alpha_0$ and $\alpha_1$ when a random 200-bit input is fed bit by bit. The lines and associated areas show respectively the means and 95\% confidence regions determined over 50 runs.}
+    \caption{Compression performance of the adaptive compression scheme for different $\alpha_0$ and $\alpha_1$ when a random 200-bit input is fed bit by bit. The lines and associated areas show respectively the means and 95\% confidence regions determined over 50 runs.}
     \label{fig:comparison_priors}
 \end{figure}
 
 \endgroup
 \printbibliography
+%\bibliographystyle{plain}
+%\bibliography{bibliography}
 
 \end{document}
