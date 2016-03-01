@@ -226,11 +226,6 @@
   {\vspace{0.25em}\listingStyle\lstset{#1}}
   {\vspace{-0.75em}}
 
-% Matlab listings
-\usepackage{matlab-prettifier}
-\newcommand{\lstinputMatlab}[1]{
-    \lstinputlisting[style=Matlab-editor, basicstyle=\fontsize{9}{8}\selectfont\ttfamily]{#1}
-}
 
 % Table footnote
 \newcommand{\tableFootnote}[1]{
@@ -261,15 +256,6 @@
 \setcounter{lstlisting}{\value{tmp}}
 \addtocounter{lstlisting}{-1}
 \captionsetup[lstlisting]{format=cont}}
-
-% Better highlighting
-\usepackage{minted}
-\newmintedfile[pythoncode]{python}{
-    fontsize        = \footnotesize,
-    baselinestretch = 0.7,
-    frame           = single,
-    breaklines      = true
-}
 
 % Expandable input
 \makeatletter
