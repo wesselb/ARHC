@@ -16,8 +16,8 @@ class ARHC:
 
     def calculateOptimalRunLength(self):
         """ Calculate the optimal run-length. """
-        return int(round(math.log(0.5) /
-                         math.log(1 - self.prob1.getPredictive1())))
+        return max(1, int(round(math.log(0.5) /
+                         math.log(1 - self.prob1.getPredictive1()))))
 
     def buildSymbols(self, runLength):
         """ Build an alphabet encoding run-lengths. """
@@ -25,11 +25,11 @@ class ARHC:
             '0' * runLength,
             pow(1 - self.prob1.getPredictive1(), runLength)
         )]
-        for i in range(runLength + 1):
+        for i in range(runLength):
             symbols.append(Leaf(
                 '0' * i + '1',
                 pow(1 - self.prob1.getPredictive1(), i) *
-                self.prob1.getPredictive1()
+                    self.prob1.getPredictive1()
             ))
         return symbols
 

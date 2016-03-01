@@ -23,6 +23,7 @@ class Test:
         pComp.wait()
         pDecomp.wait()
         self.ensureConsistency(outDecomp)
+        return outComp
 
     def ensureConsistency(self, outDecomp):
         if outDecomp != self.bits:
@@ -35,14 +36,25 @@ def bitString(N, p):
 
 
 def main():
-    Nps = [(10000, 0.1), (500, 0.1)]
+    N = 10000
+    p = 0.01
+    runs = 500
 
-    for N, p in Nps:
+    H = -(p * math.log(p) + (1 - p) * math.log(1 - p))/math.log(2)
+    lenOpt = H * N
+    lens = []
+
+    def mean(xs): return sum(map(float, xs)) / len(xs)
+    def std(x): return math.sqrt(mean(map(lambda y: (y - mean(x)) ** 2, x)))
+
+    for i in range(runs):
+        sys.stderr.write('Run {}/{}\n'.format(i + 1, runs))
         test = Test(bitString(N, p))
-        test.run(['--N', str(N), '--prob1', str(p)])
-        test.run(['--adaptive', '--N', str(N), '--prob1', str(p)])
+        lens.append(len(test.run(['--prob1', str(p)])))
 
-    print 'Verified'
+    sys.stderr.write('Length:   {:.2f} +- {:.2f}\n'.format(mean(lens), std(lens)))
+    sys.stderr.write('Overhead: {:.2f} +- {:.2f}\n'.format(mean(map(lambda x: x - lenOpt, lens)), std(lens)))
+
 
 if __name__ == '__main__':
     main()

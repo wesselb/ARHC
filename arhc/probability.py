@@ -29,20 +29,16 @@ class AdaptiveProbability:
     :param alpha1: Pseudo-count associated with the probability of one.
     """
 
-    count0 = 0
-    count1 = 0
-
     def __init__(self, alpha0, alpha1):
-        self.alpha0 = alpha0
-        self.alpha1 = alpha1
+        self.alpha0 = float(alpha0)
+        self.alpha1 = float(alpha1)
 
     def observe(self, string):
         """ Update belief according to an observation. """
         observed1 = sum(map(int, string))
-        self.count0 += len(string) - observed1
-        self.count1 += observed1
+        self.alpha0 += len(string) - observed1
+        self.alpha1 += observed1
 
     def getPredictive1(self):
         """ Find the predictive probability of one. """
-        return (self.count1 + self.alpha1) / \
-            (self.count0 + self.alpha0 + self.count1 + self.alpha1)
+        return self.alpha1 / (self.alpha0 + self.alpha1)

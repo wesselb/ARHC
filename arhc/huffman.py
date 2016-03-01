@@ -1,5 +1,5 @@
 from node import Node
-
+import sys
 
 class Huffman:
 
@@ -15,11 +15,11 @@ class Huffman:
     def build(self, symbols):
         """ Build a tree of symbols according to the Huffman algorithm. """
         while len(symbols) > 1:
-            self.mergeTwoLowestProbsymbols(symbols)
+            self.mergeTwoLowestProbSymbols(symbols)
         self.root = symbols[0]
         self.encoding = dict(self.root.getEncoding())
 
-    def mergeTwoLowestProbsymbols(self, symbols):
+    def mergeTwoLowestProbSymbols(self, symbols):
         """ Merge the two lowest probability symbols. """
         symbols.sort(key=lambda symbol: symbol.getProb())
         symbols.insert(0, Node(symbols.pop(0), symbols.pop(0)))

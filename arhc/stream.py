@@ -37,11 +37,11 @@ class Stream:
         return self.N - self.bitsWritten
 
     def observerRead(self, x):
-        """ Function that observed every bit that is read. """
+        """ Function that observes every bit that is read. """
         pass
 
     def observerWrite(self, x):
-        """ Function that observed every bit that is written. """
+        """ Function that observes every bit that is written. """
         pass
 
     def observeRead(self, observer):

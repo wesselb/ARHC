@@ -49,17 +49,20 @@ def runGroupTest(numRuns, N, p, H):
         lensAdapt.append(test.getCompressedLength())
         print('Static length: {:.0f}, adaptive length: {:.0f}'.format(lensStatic[-1], lensAdapt[-1]))
 
+    print('Optimal length:         {:.0f}'.format(math.ceil(N * H)))
     print('Static average length:  {:.0f} +- {:.0f}'.format(mean(lensStatic), std(lensStatic)))
     print('Adapt average length:   {:.0f} +- {:.0f}'.format(mean(lensAdapt), std(lensAdapt)))
 
-    def toRat(ls): return [1 - float(l)/(N * H) for l in ls]
+    def toRat(ls): return [1 - float(l)/(N) for l in ls]
     meanRatStat = mean(toRat(lensStatic))
     stdRatStat = std(toRat(lensStatic))
     meanRatAdapt = mean(toRat(lensAdapt))
     stdRatAdapt = std(toRat(lensAdapt))
 
-    return mean(toRat(lensStatic)), std(toRat(lensStatic)), mean(toRat(lensAdapt)), std(toRat(lensAdapt))
-    return mean
+    # print str(lensStatic)
+    # print str(toRat(lensStatic))
+
+    return meanRatStat, stdRatStat, meanRatAdapt, stdRatAdapt
 
 
 def writeMatlabFile(varName, List, filename):
@@ -78,8 +81,8 @@ def bitString(N, p):
 
 def main():
     p = 0.01
-    bitLengths = map(int, [1e3, 2e3, 3e3, 4e3, 5e3, 6e3, 7e3, 8e3, 9e3, 10e3])
-    numRuns = 50
+    bitLengths = [10, 50, 100, 200, 500, 1000, 5000, 10000]
+    numRuns = 200
 
     meanStaticList = []
     stdStaticList = []

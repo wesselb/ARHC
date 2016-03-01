@@ -13,7 +13,7 @@ from random import random
 
 
 class Test:
-    writeTimeMs = 60
+    writeTimeMs = 40
 
     def nonBlock(self, stream):
         flags = fcntl(stream, F_GETFL)
@@ -140,8 +140,12 @@ class Track:
 
 
 def bitString(N, p):
-    return ''.join(map(lambda x: '0' if x > p else '1',
+    sys.stderr.write('----------------\n')
+    string = ''.join(map(lambda x: '0' if x > p else '1',
                        [random() for _ in range(N)]))
+    sys.stderr.write(string + '\n')
+    sys.stderr.write('----------------\n')
+    return string
 
 
 if __name__ == '__main__':
@@ -149,7 +153,7 @@ if __name__ == '__main__':
     H = -(p * math.log(p) + (1 - p) * math.log(1 - p))/math.log(2)
     test = Test()
 
-    execTables = False
+    execTables = True
     execComparison1 = False
     execComparison1Mismatch = False
     execPriors1 = True
@@ -161,8 +165,8 @@ if __name__ == '__main__':
             '0100000000000000000000000000000010000000000000000000000000000000000'
             '0000000000100000000000000000000000100000000000000010000000000000000'
             '0000000000000000000000000000000000000000000000'[:N])
-        track = test.run(['--adaptive', '--N', str(N), '--alpha0', '0.5',
-                          '--alpha1', '0.5'])
+        track = test.run(['--adaptive', '--N', str(N), '--alpha0', '0.2',
+                          '--alpha1', '0.2'])
         lenAdapt = len(track.compOutAccum)
         with open('data/tab_adaptive.tex', 'w') as f:
             f.write(track.getTable())
@@ -175,8 +179,8 @@ if __name__ == '__main__':
             Input length:    {}
             Static length:   {}
             Adaptive length: {}
-            Optimal length:  {}
-            ''').format(N, lenStat, lenAdapt, int(math.ceil(H*N)))
+            Optimal length:  {:.2f}
+            ''').format(N, lenStat, lenAdapt, H*N)
 
     if execComparison1:
         N = 200
@@ -229,8 +233,6 @@ if __name__ == '__main__':
         runs = 50
 
         for j, (alpha0, alpha1) in enumerate(alphas):
-            if j == 0:
-                continue
             for i in range(runs):
                 sys.stderr.write('Prior {}/{}, run {}/{}\n'.format(
                     j + 1, len(alphas), i + 1, runs))
