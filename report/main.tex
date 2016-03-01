@@ -37,7 +37,7 @@ It remains to determine an appropriate maximum run-length. Let $L$ denote the ex
     H(X) = \underbrace{H_2(p) + p(H_2(p) + p(H_2(p) + \ldots))}_{n~\text{terms}}
     = H_2(p) \sum_{i=0}^{n-1} p = \frac{H_2(p)}{p}(1-(1-p)^n).
 \end{align*}
-Motivated by the fact that $1-p$ is small, we assume that the result of running the Huffman algorithm on the first $n$ symbols in $\mathcal{A}_X$ is similar to the result if they have equal probability. Now Exercise 5.28 in \cite{mackayinformation} yields that the first $\lfloor (n-1) f^- \rfloor$ symbols in $\mathcal{A}_X$ will have length $\lfloor \log_2 (n - 1) \rfloor + 1$ and the other  $n - 1 -\lceil (n-1) f^- \rceil$ symbols in $\mathcal{A}_X$ will have length $\lceil \log_2 (n - 1) \rceil + 1$ where $f^- = 2^{\lceil \log_2 (n - 1) \rceil}/(n-1) - 1$. We can then approximate the expected length by
+Motivated by the fact that $1-p$ is small, we assume that the result of running the Huffman algorithm on the first $n-1$ symbols in $\mathcal{A}_X$ is similar to the result if they have equal probability. Exercise 5.28 in \cite{mackayinformation} yields that the first $\lfloor (n-1) f^- \rfloor$ symbols in $\mathcal{A}_X$ will have length $\lfloor \log_2 (n - 1) \rfloor + 1$ and the next $n - 1 -\lceil (n-1) f^- \rceil$ symbols in $\mathcal{A}_X$ will have length $\lceil \log_2 (n - 1) \rceil + 1$ where $f^- = 2^{\lceil \log_2 (n - 1) \rceil}/(n-1) - 1$. We can then approximate the expected length by
 \begin{align*}
     L \approx \sum_{i=1}^{\lfloor (n-1) f^- \rfloor} (1-p)^{i-1}p\cdot (\lfloor \log_2 (n - 1) \rfloor + 1) +
     \sum_{i=\lceil (n-1) f^- \rceil}^{n} (1-p)^{i-1}p\cdot (\lceil \log_2 (n - 1) \rceil + 1) + (1-p)^n.
