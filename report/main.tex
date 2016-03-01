@@ -55,19 +55,19 @@ The expected codeword length of the Huffman code is equal to the entropy when th
 
 
 \section{Description}
-\Cref{alg:pseudo} provides a high-level overview of ARHC. Descriptions of the components of the program can be found in the source code or in the documentation in \code{documentation.epub}.
+\Cref{alg:pseudo} provides a high-level overview of ARHC. Descriptions of the components of the program can be found in the source code or in the documentation in \code{documentation.epub}. Run scripts \code{squash} and \code{unsquash} to perform the exercise. Additionally, run \code{squash.py --help} for more advanced run-time options.
 
 The implementation of the Huffman algorithm is facilitated through \code{Leaf} and \code{Node} objects that define a binary tree. The algorithm is initialised by encapsulating each symbol and its probability in a \code{Leaf} object, and the merge operation is performed by combining two \code{Leaf} objects into a \code{Node} object. A code word can be mapped to its symbol by providing it as an argument to the \code{decode} operation of the root \code{Node} of the tree. Additionally, the encoding of all code words can be obtained by calling the \code{getEncoding} operation of the root \code{Node} of the tree.
 
-If $p$ is unknown, then the user can provide parameters $\alpha_0$, $\alpha_1$ for a prior $\operatorname{Beta}(\alpha_0, \alpha_1)$ over $p$. In lines 17 to 19 of \cref{alg:pseudo}, the posterior over $p$ is updated according to the observation $S$.
+If $p$ is unknown, then the user can provide parameters $\alpha_0$, $\alpha_1$ for a prior $\operatorname{Beta}(\alpha_0, \alpha_1)$ over $p$. On lines 17 to 19 of \cref{alg:pseudo}, the posterior over $p$ is updated according to the observation $S$.
 
-The operation of line 6 of \cref{alg:pseudo} dynamically adjusts the run-length so that
+The operation on line 6 of \cref{alg:pseudo} dynamically adjusts the run-length so that
 \begin{enumerate}
     \item the run-length is near optimal for the current estimate of $p$ and
     \item the symbols in $\mathcal{A}_X$ are able to entirely encode and decode the input stream\footnote{When $n>N$, without adjustment $\mathcal{A}_X$ might not be able to encode the remaining bits in the input stream, and some symbols in $\mathcal{A}_X$ will never be used.} without the use of an end-of-transmission symbol or the length of the transmitted message.
 \end{enumerate}
 
-Note that ARHC is able to perform partial compression and partial decompression; the compressor writes a symbol directly after the associated input bits are read and similarly the decompressor writes the input bits directly after the associated symbol is read. We will experiment with this behaviour by feeding the input bit by bit in \cref{sec:analysis}.
+Note that ARHC is able to perform partial compression and partial decompression; the compressor writes a symbol directly after the associated input bits are read and similarly the decompressor writes the input bits directly after the associated symbol is read.
 
 \begin{algorithm}[ht]
     \begin{algorithmic}[1]
