@@ -13,7 +13,7 @@ from random import random
 
 
 class Test:
-    writeTimeMs = 40
+    writeTimeMs = 60
 
     def nonBlock(self, stream):
         flags = fcntl(stream, F_GETFL)
@@ -35,9 +35,8 @@ class Test:
 
     def run(self, args):
         bitsCopy = list(self.bits)
-        pDecomp = Popen(
-            ['./squash.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
-        pComp = Popen(['./squash.py'] + args, stdin=PIPE, stdout=PIPE)
+        pDecomp = Popen(['./unsquash'] + args, stdin=PIPE, stdout=PIPE)
+        pComp = Popen(['./squash'] + args, stdin=PIPE, stdout=PIPE)
 
         # Make pipes non-blocking
         self.nonBlock(pComp.stdin)

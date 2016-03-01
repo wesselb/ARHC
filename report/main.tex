@@ -74,7 +74,7 @@ Note that ARHC is able to perform partial compression and partial decompression;
             \EndIf
             \While{$N > 0$}
                 \State $n \gets \max\{1,\min\{\operatorname{round}(-1/\log_2 (1 - p)) , N\}\}$
-                \State Obtain the code $C_X$ by running Huffman algorithm on the ensemble \begin{align*}
+                \State Obtain the code $C_X$ by running the Huffman algorithm on the ensemble \begin{align*}
                     \mathcal{A}_X &= \big(1, 01, 001, \ldots, \underbrace{0\cdots0}_{n-1}\!1, \underbrace{0\cdots0}_{n} \big), \\
                     \mathcal{P}_X &= \big( p, (1-p)p, \ldots, (1-p)^{n-1}p, (1-p)^n \big)
                 \end{align*}
@@ -171,15 +171,15 @@ Finally, \cref{tab:bits_highlight} shows the output of the compressor and decomp
         \includegraphics[width=\linewidth]{\outputPath comparison1_mismatch}
         \caption{Compressor does not match reality, the parameter of the static compressor scheme is $p=0.1$ and the bent coin has probability $p=0.01$}
     \end{subfigure}
-    \caption{Comparison of the static compression scheme and adaptive compression scheme when the input is fed bit by bit. The parameters of the prior are $\alpha_0=0.1$ and $\alpha_1=0.1$. The lines and associated areas show respectively the means and 95\% confidence regions determined over 200 runs.}
+    \caption{Comparison of the static compression scheme and adaptive compression scheme when a random 200-bit input is fed bit by bit. The parameters of the prior are $\alpha_0=0.1$ and $\alpha_1=0.1$. The lines and associated areas show respectively the means and 95\% confidence regions determined over 200 runs.}
     \label{fig:comparison_mismatch}
 \end{figure}
 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=.95\linewidth]{\outputPath old/comparison_priors}
-    \caption{Comparison of the adaptive compression scheme for different $\alpha_0$ and $\alpha_1$ when the input is fed bit by bit. The lines and associated areas show respectively the means and 95\% confidence regions determined over 50 runs.}
+    \includegraphics[width=.95\linewidth]{\outputPath comparison_priors}
+    \caption{Comparison of the adaptive compression scheme for different $\alpha_0$ and $\alpha_1$ when a random 200-bit input is fed bit by bit. The lines and associated areas show respectively the means and 95\% confidence regions determined over 50 runs.}
     \label{fig:comparison_priors}
 \end{figure}
 

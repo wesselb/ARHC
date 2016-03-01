@@ -13,9 +13,8 @@ class Test:
         self.bits = bits
 
     def run(self, args=[]):
-        pComp = Popen(['./squash.py'] + args, stdin=PIPE, stdout=PIPE)
-        pDecomp = Popen(
-            ['./squash.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
+        pComp = Popen(['./squash'] + args, stdin=PIPE, stdout=PIPE)
+        pDecomp = Popen(['./unsquash'] + args, stdin=PIPE, stdout=PIPE)
         pComp.stdin.write(self.bits)
         outComp = pComp.stdout.read()
         pDecomp.stdin.write(outComp)
@@ -38,22 +37,16 @@ def bitString(N, p):
 def main():
     N = 10000
     p = 0.01
-    runs = 500
 
-    H = -(p * math.log(p) + (1 - p) * math.log(1 - p))/math.log(2)
-    lenOpt = H * N
-    lens = []
+    with open('tests/benchmark.txt', 'r') as f:
+        inp = f.read().strip()
 
-    def mean(xs): return sum(map(float, xs)) / len(xs)
-    def std(x): return math.sqrt(mean(map(lambda y: (y - mean(x)) ** 2, x)))
+    test = Test(inp)
+    test.run(['--prob1', str(p), '--N', str(N)])
+    test = Test(inp)
+    test.run(['--prob1', str(p), '--N', str(N), '--adaptive'])
 
-    for i in range(runs):
-        sys.stderr.write('Run {}/{}\n'.format(i + 1, runs))
-        test = Test(bitString(N, p))
-        lens.append(len(test.run(['--prob1', str(p)])))
-
-    sys.stderr.write('Length:   {:.2f} +- {:.2f}\n'.format(mean(lens), std(lens)))
-    sys.stderr.write('Overhead: {:.2f} +- {:.2f}\n'.format(mean(map(lambda x: x - lenOpt, lens)), std(lens)))
+    sys.stderr.write('OK\n')
 
 
 if __name__ == '__main__':

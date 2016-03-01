@@ -12,8 +12,8 @@ class Test:
         self.bits = bits
         
     def run(self, args=[]):
-        pComp = Popen(['./squash.py'] + args, stdin=PIPE, stdout=PIPE)
-        pDecomp = Popen(['./squash.py', '--decompress'] + args, stdin=PIPE, stdout=PIPE)
+        pComp = Popen(['./squash'] + args, stdin=PIPE, stdout=PIPE)
+        pDecomp = Popen(['./unsquash'] + args, stdin=PIPE, stdout=PIPE)
         pComp.stdin.write(self.bits)
         outComp = pComp.stdout.read()
         pDecomp.stdin.write(outComp)
@@ -33,7 +33,7 @@ class Test:
 
 
 def main():
-    with open('benchmark.txt', 'r') as f:
+    with open('tests/benchmark.txt', 'r') as f:
         test = Test(f.read().strip())
     # test = Test('11000000001000000000000000000000100000100000000000000100001000000000100000000000001000000000100010000000010000000100001000000000000000001100000000000100000000000101000000000000000000001010000000000000')
 

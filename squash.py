@@ -32,9 +32,9 @@ class Main:
         Adaptive compression
         --adaptive           Use adaptive compression scheme
         --alpha0 value       Pseudo-count associated with the probability of
-                             zero, default 0.1
+                             zero, default 0.5
         --alpha1 value       Pseudo-count associated with the probability of
-                            one, default 0.1
+                            one, default 0.5
 
     Details:
         Compresses by default. Uses static compression scheme by default.
