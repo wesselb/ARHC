@@ -153,7 +153,7 @@ if __name__ == '__main__':
     H = -(p * math.log(p) + (1 - p) * math.log(1 - p))/math.log(2)
     test = Test()
 
-    execTables = True
+    execTables = False
     execComparison1 = False
     execComparison1Mismatch = False
     execPriors1 = True

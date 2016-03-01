@@ -39,7 +39,7 @@ def main():
 
     test.run()#['--N', '200'])
     sys.stderr.write('Static:   {:.0f}\n'.format(test.getCompressedLength()))
-    test.run(['--adaptive', '--alpha0', '0.1', '--alpha1', '0.1'])
+    test.run(['--adaptive', '--alpha0', '0.2', '--alpha1', '0.2'])
     sys.stderr.write('Adaptive: {:.0f}\n'.format(test.getCompressedLength()))
 
 
