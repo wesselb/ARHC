@@ -34,7 +34,7 @@ class Main:
         --alpha0 value       Pseudo-count associated with the probability of
                              zero, default 0.5
         --alpha1 value       Pseudo-count associated with the probability of
-                            one, default 0.5
+                             one, default 0.5
 
     Details:
         Compresses by default. Uses static compression scheme by default.
